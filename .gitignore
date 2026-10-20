@@ -1,0 +1,56 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+captures/
+.cxx/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Native artifacts built by CI (capstone is compiled from source for arm64)
+app/src/main/jniLibs/**/*.so
+
+# Secrets and signing material: never commit
+*.jks
+*.keystore
+keystore.properties
+.env
+
+# Games / ROMs: the repository contains none
+*.z64
+*.n64
+*.v64
+*.rom
+*.iso
+*.cue
+*.gba
+*.nds
+*.gcm
+*.wbfs
+*.cso
+*.chd
+*.pbp
+*.xci
+*.nsp
+*.zip
+*.7z
+*.rar
+
+# The upstream's own tiny demo ROM is a normal asset of the interface (not a user game).
+!app/src/main/python/decompnet/app/static/demo/*.z64
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep the Gradle wrapper jar (it is required by the CI)
+!gradle/wrapper/gradle-wrapper.jar

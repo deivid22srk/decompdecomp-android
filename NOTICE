@@ -1,0 +1,21 @@
+decompdecomp
+============
+
+Copyright (C) 2024-2026 n-delic and contributors.
+decomp.wtf, which decompdecomp continues, is by Sam Wolfs (@i12bp8) and contributors.
+
+This repository is an Android port of decompdecomp. It includes the source of
+decompdecomp at the commit in UPSTREAM_COMMIT, with small changes marked
+"ANDROID PATCH" (running splat in-process, a mobile stylesheet, and an entry
+point for the app). The original source and this port are licensed under the
+GNU Affero General Public License, version 3 only (AGPL-3.0-only). See LICENSE.
+
+The Android app uses:
+  - Chaquopy (MIT) and CPython (PSF-2.0)
+  - capstone (BSD-3-Clause)
+  - rabbitizer, spimdisasm, splat (MIT)
+  - Starlette (BSD-3-Clause), Uvicorn (BSD-3-Clause), HTTPX (BSD-3-Clause)
+  - PyYAML (MIT), intervaltree (Apache-2.0), tqdm (MPL-2.0 and MIT),
+    colorama (BSD-3-Clause), pyelftools (Public Domain), n64img (MIT)
+
+No game, ROM or copyrighted asset is included in this repository or in the APK.

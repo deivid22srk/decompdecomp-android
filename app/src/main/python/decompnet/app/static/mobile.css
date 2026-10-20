@@ -1,0 +1,50 @@
+/* ANDROID PATCH: decompdecomp in the app's WebView.
+ *
+ * The interface is the desktop one, already responsive down to ~560 px. These rules only make the
+ * things a finger touches comfortable and remove the two desktop-only controls: "Quit" would kill
+ * the Python process under the app, and "Update" would replace an installation that does not
+ * exist on Android (the app is updated as an APK).
+ */
+
+#quitBtn,
+#navUpdate {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  button,
+  .btn,
+  .tab,
+  .nav a,
+  .nav button,
+  [role="button"] {
+    min-height: 42px;
+  }
+
+  /* A focused field smaller than 16 px makes mobile browsers zoom the whole page. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Assembly and the function list are dense; keep them readable without horizontal scrolling. */
+  pre,
+  code,
+  .asm,
+  .source {
+    font-size: 12px;
+  }
+
+  .wrap,
+  .page,
+  main {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+html,
+body {
+  overscroll-behavior: none;
+}

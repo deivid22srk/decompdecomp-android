@@ -1,0 +1,129 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Python 3.13 (Chaquopy buildPython)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install platform, build-tools and NDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973"
+          echo "NDK: ${ANDROID_SDK_ROOT}/ndk/27.0.12077973"
+
+      # ---------------------------------------------------------------- capstone
+      # capstone's Python package is a ctypes wrapper around libcapstone.so. Its x86 wheel is
+      # useless here; build the C library for arm64 with the NDK and let the vendored wrapper
+      # load it from the app's nativeLibraryDir (LIBCAPSTONE_PATH).
+      - name: Cache libcapstone.so
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/jniLibs/arm64-v8a/libcapstone.so
+          key: capstone-5.0.9-arm64-v8a-ndk27-${{ runner.os }}
+
+      - name: Build capstone 5.0.9 for arm64-v8a
+        run: |
+          set -euo pipefail
+          OUT="app/src/main/jniLibs/arm64-v8a/libcapstone.so"
+          if [ ! -f "$OUT" ]; then
+            python3 -m pip download capstone==5.0.9 --no-binary=:all: --no-deps -d "$RUNNER_TEMP/cap"
+            tar xzf "$RUNNER_TEMP"/cap/capstone-5.0.9.tar.gz -C "$RUNNER_TEMP/cap"
+            NDK="${ANDROID_SDK_ROOT}/ndk/27.0.12077973"
+            BIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+            make -C "$RUNNER_TEMP/cap/capstone-5.0.9/src" -j"$(nproc)" \
+              CC="$BIN/aarch64-linux-android26-clang" \
+              AR="$BIN/llvm-ar" \
+              RANLIB="$BIN/llvm-ranlib" \
+              CAPSTONE_STATIC=no \
+              libcapstone.so.5
+            mkdir -p "$(dirname "$OUT")"
+            cp "$RUNNER_TEMP/cap/capstone-5.0.9/src/libcapstone.so.5" "$OUT"
+          fi
+          ls -l "$OUT"
+          file "$OUT"
+
+      # ---------------------------------------------------------------- gradle
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Create the debug keystore used to sign the release APK
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Build release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleRelease
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          APK="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+          test -n "$APK"
+          cp "$APK" dist/decompdecomp-android-arm64.apk
+          sha256sum dist/decompdecomp-android-arm64.apk | tee dist/SHA256SUMS.txt
+          ls -lh dist
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: decompdecomp-android-arm64
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish release for a v* tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            **decompdecomp para Android** — APK arm64-v8a.
+
+            Baixe `decompdecomp-android-arm64.apk`, permita a instalação de fontes
+            desconhecidas e abra. O app extrai o runtime Python no primeiro uso; a
+            primeira abertura pode demorar.
+
+            Limitação principal: os compiladores históricos do jogo são binários
+            x86_64 e não rodam em ARM. Importar a ROM, dividir, ver o mapa de funções,
+            ler/editar o assembly, usar agentes de API e exportar o projeto funcionam;
+            o veredito byte a byte precisa de um PC x86_64.
+
+            Código-fonte e créditos: veja o README do repositório.
