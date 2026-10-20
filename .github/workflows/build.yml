@@ -84,6 +84,43 @@ jobs:
           ls -l "$OUT"
           file "$OUT"
 
+      # ---------------------------------------------------------------- rabbitizer
+      # rabbitizer is a CPython C extension. Chaquopy's pip builds local packages with the
+      # host toolchain, which produced an x86-64 .so inside an arm64 APK. Build it with the
+      # NDK and the exact Chaquopy target headers, and link the target libpython so the
+      # Android linker can resolve the Python symbols. The Python package is a small shim.
+      - name: Build rabbitizer 1.16.2 for arm64-v8a
+        run: |
+          set -euo pipefail
+          OUT="app/src/main/jniLibs/arm64-v8a/librabbitizer.so"
+          if [ ! -f "$OUT" ]; then
+            TARGET_VERSION="3.13.16-0"
+            TARGET_URL="https://repo1.maven.org/maven2/com/chaquo/python/target/${TARGET_VERSION}/target-${TARGET_VERSION}-arm64-v8a.zip"
+            curl -fsSL -o "$RUNNER_TEMP/chaquopy-target.zip" "$TARGET_URL"
+            unzip -q "$RUNNER_TEMP/chaquopy-target.zip" -d "$RUNNER_TEMP/chaquopy-target"
+            NDK="${ANDROID_SDK_ROOT}/ndk/27.0.12077973"
+            BIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+            PY_INC="$RUNNER_TEMP/chaquopy-target/include/python3.13"
+            PY_LIB="$RUNNER_TEMP/chaquopy-target/jniLibs/arm64-v8a"
+            mkdir -p "$(dirname "$OUT")"
+            "$BIN/aarch64-linux-android26-clang" -shared -fPIC -O2 -std=c11 \
+              -I"$PY_INC" \
+              -Ithird_party/rabbitizer/include \
+              -Ithird_party/rabbitizer/rabbitizer \
+              -Ithird_party/rabbitizer/tables \
+              $(find third_party/rabbitizer/rabbitizer third_party/rabbitizer/src -name '*.c' | sort) \
+              -L"$PY_LIB" -lpython3.13 -Wl,-rpath-link,"$PY_LIB" \
+              -lm -ldl -llog \
+              -Wl,-soname,librabbitizer.so \
+              -Wl,-z,max-page-size=16384 \
+              -o "$OUT"
+          fi
+          ls -l "$OUT"
+          file "$OUT"
+          readelf -h "$OUT" | grep -E 'Class|Machine'
+          readelf -d "$OUT" | grep NEEDED
+          "$BIN/llvm-nm" -D "$OUT" | grep PyInit_rabbitizer
+
       # ---------------------------------------------------------------- gradle
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
@@ -110,8 +147,16 @@ jobs:
           APK="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
           test -n "$APK"
           cp "$APK" dist/decompdecomp-android-arm64.apk
-          sha256sum dist/decompdecomp-android-arm64.apk | tee dist/SHA256SUMS.txt
+          (cd dist && sha256sum decompdecomp-android-arm64.apk > SHA256SUMS.txt)
+          cat dist/SHA256SUMS.txt
           ls -lh dist
+
+      - name: Verify APK
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs dist/decompdecomp-android-arm64.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/decompdecomp-android-arm64.apk \
+            | grep -E 'package:|sdkVersion|targetSdkVersion|native-code'
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

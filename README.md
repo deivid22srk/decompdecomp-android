@@ -68,7 +68,8 @@ privada pode ser limpa em Configurações do Android → Apps → decompdecomp �
 - **Split:** `splat` roda **no mesmo processo** (o Android não tem um segundo interpretador
   Python para `python -m splat`); `spimdisasm` e `rabbitizer` fazem a desmontagem.
 - **Nativos:** `libcapstone.so` é compilado com o NDK para arm64 no CI e carregado via
-  `LIBCAPSTONE_PATH`; `rabbitizer` é compilado pelo Chaquopy no CI.
+  `LIBCAPSTONE_PATH`; `rabbitizer` é compilado pelo NDK no CI com os headers e o
+  `libpython3.13.so` do target do Chaquopy e carregado de `nativeLibraryDir` por um shim Python.
 - **MCP:** um shim mínimo mantém as rotas `custom_route` e o app ASGI, sem `pydantic-core`
   (Rust, sem wheel Android). O agente de API do upstream não usa MCP e continua funcionando.
 - **Exportação:** o exportador do projeto gera a árvore e o app a compacta; o ZIP é salvo com

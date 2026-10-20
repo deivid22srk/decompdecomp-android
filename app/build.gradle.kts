@@ -75,15 +75,20 @@ android {
 
 chaquopy {
     defaultConfig {
-        version = "3.13"
+        // Pin the target so the headers/libpython the CI links rabbitizer against match
+        // exactly what Chaquopy packages in the APK.
+        version = "3.13.16"
         buildPython("python3.13")
 
         pip {
             // The app itself, its splitter and the HTTP layer. `mcp`, `pydantic`, `ninja`,
             // `zstandard`, `pygfxd` and `crunch64` are intentionally absent: Android uses a tiny
             // `mcp` shim, and the two N64 codecs are replaced by import-only stubs.
-            // rabbitizer is vendored because upstream builds with -Werror, which NDK clang trips.
-            install(rootProject.file("third_party/rabbitizer").path)
+            // rabbitizer is a C extension. Chaquopy's pip builds local packages with the host
+            // toolchain, which produced an x86-64 .so; the CI compiles it with the NDK and the
+            // Chaquopy target headers (see .github/workflows/build.yml). This package is the
+            // pure-Python loader that satisfies spimdisasm's `rabbitizer` requirement.
+            install(rootProject.file("third_party/rabbitizer-shim").path)
             // splat64 pinned intervaltree 3.1.0 and pylibyaml 0.1.0, both sdist-only on PyPI;
             // Chaquopy resolves PyPI dependencies as wheels only. The vendored copy relaxes the
             // intervaltree pin and drops pylibyaml (the app has a no-op module with that name).

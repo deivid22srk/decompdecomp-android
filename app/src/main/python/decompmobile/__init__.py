@@ -96,6 +96,9 @@ def start(home_path: str, first_port: int = 6464, native_lib_dir: str = "") -> s
         os.environ["DECOMP_TRAY"] = "0"
         if native_lib_dir:
             os.environ["LIBCAPSTONE_PATH"] = native_lib_dir  # before decompnet imports capstone
+            # The rabbitizer C extension is compiled by the CI for arm64 and packaged in
+            # jniLibs; the pure-Python shim in third_party/rabbitizer-shim loads it.
+            os.environ["RABBITIZER_LIB"] = str(Path(native_lib_dir) / "librabbitizer.so")
         home = Path(home_path).expanduser()
         home.mkdir(parents=True, exist_ok=True)
         os.environ["DECOMP_HOME"] = str(home)

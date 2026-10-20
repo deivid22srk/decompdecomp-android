@@ -71,9 +71,11 @@ web, e é ela que o app Android incorpora.
   binários nativos para Android e não depende de executar ELF a partir de dados do app. Um
   rootfs x86_64 sob QEMU/proot permitiria, em tese, rodar os compiladores originais, mas custaria
   centenas de MB, seria 5–20× mais lento e não é verificável neste ambiente sem dispositivo.
-- **Pacotes nativos:** `capstone` e `rabbitizer` são compilados pelo NDK no CI (Chaquopy pip).
-  Se um deles falhar, o build é ajustado com fonte vendorizada/wheel local — não se troca a
-  arquitetura.
+- **Pacotes nativos:** `capstone` e `rabbitizer` são compilados pelo NDK no CI. O `rabbitizer`
+  usa os headers e o `libpython3.13.so` do target 3.13.16 do Chaquopy e é carregado de
+  `nativeLibraryDir` por um shim Python; o pip do Chaquopy instala só o shim (puro Python),
+  porque ele compila pacotes locais com o toolchain do host. Se um nativo falhar, o build é
+  ajustado com fonte vendorizada — não se troca a arquitetura.
 - **Interface:** a própria página do projeto em um `WebView`, com `viewport` já responsivo,
   mais uma barra nativa (ROM, Exportar, Console, fonte, Sobre). Não há teclas ESC/TAB/CTRL
   porque não há terminal nem TUI: a página usa toque, campos e botões nativos da web.
