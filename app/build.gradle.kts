@@ -84,7 +84,11 @@ chaquopy {
             // `mcp` shim, and the two N64 codecs are replaced by import-only stubs.
             // rabbitizer is vendored because upstream builds with -Werror, which NDK clang trips.
             install(rootProject.file("third_party/rabbitizer").path)
-            install("splat64==0.50.1")
+            // splat64 pinned intervaltree 3.1.0 and pylibyaml 0.1.0, both sdist-only on PyPI;
+            // Chaquopy resolves PyPI dependencies as wheels only. The vendored copy relaxes the
+            // intervaltree pin and drops pylibyaml (the app has a no-op module with that name).
+            install(rootProject.file("third_party/splat64").path)
+            install("intervaltree==3.2.1")
             install("spimdisasm==1.42.4")
             install("n64img==0.3.3")
             install("pyelftools==0.33")
