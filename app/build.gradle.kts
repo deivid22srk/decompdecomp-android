@@ -75,9 +75,9 @@ android {
 
 chaquopy {
     defaultConfig {
-        // Pin the target so the headers/libpython the CI links rabbitizer against match
-        // exactly what Chaquopy packages in the APK.
-        version = "3.13.16"
+        // Chaquopy only accepts major.minor here. The current 3.13 target is 3.13.16; the
+        // CI downloads that exact target for rabbitizer's headers/libpython (see the workflow).
+        version = "3.13"
         buildPython("python3.13")
 
         pip {
