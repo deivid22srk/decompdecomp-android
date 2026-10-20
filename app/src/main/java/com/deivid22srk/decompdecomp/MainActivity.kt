@@ -128,7 +128,7 @@ class MainActivity : Activity() {
         overlay = buildOverlay()
         content.addView(overlay, FrameLayout.LayoutParams(MATCH, MATCH))
         column.addView(content, LinearLayout.LayoutParams(MATCH, 0, 1f))
-        column.addView(buildToolbar(), LinearLayout.LayoutParams(MATCH, WRAP_CONTENT))
+        column.addView(buildToolbar(), LinearLayout.LayoutParams(MATCH, WRAP))
         return column
     }
 
@@ -180,7 +180,7 @@ class MainActivity : Activity() {
             visibility = View.GONE
             setOnClickListener { restartServer() }
         }
-        box.addView(retry, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+        box.addView(retry, LinearLayout.LayoutParams(WRAP, WRAP).apply {
             gravity = Gravity.CENTER
             topMargin = dp(16)
         })
