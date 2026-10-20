@@ -110,7 +110,7 @@ app/src/main/python/         decompnet vendorizado + shim mcp + entrada decompmo
 app/src/main/jniLibs/        libcapstone.so (gerado pelo CI, não versionado)
 docs/ANALISE.md              análise do upstream e arquitetura do port
 .github/workflows/build.yml  build do APK
-gradle/, gradlew*            Gradle Wrapper 8.9
+gradle/, gradlew*            Gradle Wrapper 8.11.1
 LICENSE, LICENSE-decomp.wtf  licenças do upstream (AGPL-3.0)
 ```
 
